@@ -1,113 +1,121 @@
-import Image from "next/image";
+"use client";
+import { io, Socket } from "socket.io-client";
+import { ChangeEvent, FormEvent, useEffect, useState, useRef } from "react";
+import Message from "@/components/Message";
 
 export default function Home() {
+  const [messages, setMessages] = useState<string[]>(["default"]);
+  const [value, setValue] = useState<string>("");
+  const [room, setRoom] = useState<string>("");
+  const socketRef = useRef<Socket | null>(null);
+
+  useEffect(() => {
+    socketRef.current = io("http://localhost:5000");
+
+    socketRef.current.on("connect", () => {
+      console.log("Socket connected: ", socketRef.current?.connected);
+      console.log(socketRef.current?.id);
+    });
+
+    socketRef.current.on("message", (message: string) => {
+      console.log("Received message: ", message);
+      setMessages((prevMessages) => [...prevMessages, message]);
+    });
+    socketRef.current.on(
+      "message-room",
+      (data: { room: string; message: string }) => {
+        console.log("Received message: ", data);
+        setMessages((prevMessages) => [...prevMessages, data.message]);
+      }
+    );
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, []);
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (socketRef.current && socketRef.current.connected) {
+      if (room) {
+        const data: { room: string; message: string } = {
+          room: room,
+          message: value,
+        };
+        socketRef.current.emit("message-room", data, (response: string) => {
+          console.log("response : ", response);
+          setValue("");
+        });
+      }
+    } else {
+      console.log("Socket is not connected");
+    }
+  };
+
+  const handleRoomSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit("join-room", room, (response: string) => {
+        console.log("response on room connection: ", response);
+      });
+    } else {
+      console.log("Socket is not connected to room");
+    }
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+  };
+  const handleRoomChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setRoom(e.target.value);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    <div className="bg-red-300 w-screen h-screen">
+      <form
+        className="flex flex-col items-center justify-center"
+        onSubmit={handleRoomSubmit}
+      >
+        <input
+          value={room}
+          onChange={handleRoomChange}
+          type="text"
+          placeholder="id"
+          className="my-4 w-10/12 h-10 text-slate-50 bg-red-300 focus:outline-red-400 px-3 rounded-md border-2 border-red-200 placeholder:text-red-200"
         />
+        <button
+          type="submit"
+          className="bg-red-300 h-10 w-20 text-slate-50 hover:scale-110 transition-all duration-100 hover:bg-red-400 rounded-md border-2 border-red-200"
+        >
+          Join
+        </button>
+      </form>
+      <form
+        className="flex flex-col items-center justify-center"
+        onSubmit={handleSubmit}
+      >
+        <input
+          value={value}
+          onChange={handleChange}
+          type="text"
+          placeholder="message"
+          className="my-4 w-10/12 h-10 text-slate-50 bg-red-300 focus:outline-red-400 px-3 rounded-md border-2 border-red-200 placeholder:text-red-200"
+        />
+        <button
+          type="submit"
+          className="bg-red-300 h-10 w-20 text-slate-50 hover:scale-110 transition-all duration-100 hover:bg-red-400 rounded-md border-2 border-red-200"
+        >
+          Send
+        </button>
+      </form>
+      <div className="my-10 flex flex-col justify-center items-end">
+        <div className="text-3xl w-screen flex items-center justify-center font-semibold text-slate-50">
+          Messages
+        </div>
+        {messages.map((msg, idx) => (
+          <Message message={msg} key={idx} />
+        ))}
       </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
 }
