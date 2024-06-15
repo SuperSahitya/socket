@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import React, { useEffect } from "react";
 import { create } from "zustand";
 
@@ -28,7 +29,7 @@ const Navbar = () => {
           credentials: "include",
         });
         if (!response.ok) {
-          console.log(await response.text())
+          console.log(await response.text());
           throw new Error("Error Occured While Getting User Auth Status");
         }
         const userFromServer: User = await response.json();
@@ -42,7 +43,31 @@ const Navbar = () => {
     getAuthStatus();
   }, []);
 
-  return <div>Navbar</div>;
+  return (
+    <div className="w-full h-12 bg-slate-900 text-slate-300 flex flex-row items-center justify-between px-3">
+      <h1 className="text-slate-300 hover:text-slate-50 text-xl font-bold">
+        socket
+      </h1>
+      <div className="px-2 flex flex-row items-center justify-evenly gap-4 sm:gap-3">
+        <div>Chat</div>
+        {!user ? (
+          <Link
+            href={"/login"}
+            className="py-1 px-2 bg-slate-400 rounded-md text-slate-950 hover:bg-slate-50"
+          >
+            Login
+          </Link>
+        ) : (
+          <Link
+            href={"/profile"}
+            className="py-1 px-2 bord bg-slate-400 rounded-md text-slate-950 transition-all duration-100 text- hover:bg-slate-50 font-medium"
+          >
+            {user.userName}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Navbar;

@@ -6,18 +6,19 @@ import { useParams } from "next/navigation";
 import { ObjectId } from "mongoose";
 import { useUserStore } from "@/components/Navbar";
 
-interface Message {
+interface MessageInterface {
   _id: ObjectId;
   senderId: string;
   receiverId: string;
   content: string;
   isDelivered: true;
-  createdAt: Date;
+  createdAt: string;
 }
 
 interface ClientMessage {
   sentBy: "user" | "other";
   content: string;
+  date: string;
 }
 
 interface MessageEmmittedFromServer {
@@ -40,27 +41,35 @@ export default function Chat() {
           `http://localhost:5000/messages/${receiverId}`,
           { credentials: "include" }
         );
-        const messagesFromServer: Message[] = await response.json();
-        const myMessages = [];
+        const messagesFromServer: MessageInterface[] = await response.json();
+        const myMessages: ClientMessage[] = [];
+        if (!user) {
+          console.log("No user Found");
+          throw new Error("No user Found");
+        }
         for (let i = 0; i < messagesFromServer.length; i++) {
-          if (messagesFromServer[i].senderId !== user?.userName) {
+          if (messagesFromServer[i].senderId !== user!.userName) {
             myMessages.push({
               sentBy: "other",
               content: messagesFromServer[i].content,
+              date: messagesFromServer[i].createdAt,
             });
           } else {
             myMessages.push({
               sentBy: "user",
               content: messagesFromServer[i].content,
+              date: messagesFromServer[i].createdAt,
             });
           }
         }
+        setMessages(myMessages);
+        console.log("myMessages : ", myMessages);
       } catch (error) {
         console.error("Error Occurued While Fetching Messages", error);
       }
     };
     getMessages();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     socketRef.current = io("http://localhost:5000", {
@@ -82,19 +91,17 @@ export default function Chat() {
 
     socketRef.current.on(
       "private-message",
-      (data: { receiverId: string; content: string }) => {
+      (data: MessageEmmittedFromServer) => {
         console.log("Received message: ", data);
-        if (data.receiverId == user?.userName) {
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            { sentBy: "other", content: data.content },
-          ]);
-        } else {
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            { sentBy: "user", content: data.content },
-          ]);
-        }
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            sentBy: "other",
+            content: data.content,
+            date: new Date().toISOString(),
+          },
+        ]);
+        console.log(messages);
       }
     );
 
@@ -116,7 +123,11 @@ export default function Chat() {
           setValue("");
           setMessages((prevMessages) => [
             ...prevMessages,
-            { sentBy: "user", content: data.content },
+            {
+              sentBy: "user",
+              content: data.content,
+              date: new Date().toISOString(),
+            },
           ]);
         });
       }
@@ -165,14 +176,14 @@ export default function Chat() {
           Messages
         </div>
         {messages.map((msg, idx) =>
-          msg.sentBy === "other" ? (
+          msg.sentBy !== "user" ? (
             <Message
-              message={`Sent By:${receiverId}: ${msg.content}`}
+              message={`Sent By:${receiverId}: ${msg.content} // ${msg.date}`}
               key={idx}
             />
           ) : (
             <Message
-              message={`Sent By:${user?.userName}: ${msg.content}`}
+              message={`Sent By:${user?.userName}: ${msg.content} // ${msg.date}`}
               key={idx}
             />
           )
