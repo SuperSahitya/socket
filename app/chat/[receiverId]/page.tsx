@@ -1,7 +1,7 @@
 "use client";
 import { io, Socket } from "socket.io-client";
 import { ChangeEvent, FormEvent, useEffect, useState, useRef } from "react";
-import Message from "@/components/Message";
+import { MessageFromOther, MessageFromUser } from "@/components/Message";
 import { useParams } from "next/navigation";
 import { ObjectId } from "mongoose";
 import { useUserStore } from "@/components/Navbar";
@@ -11,7 +11,7 @@ interface MessageInterface {
   senderId: string;
   receiverId: string;
   content: string;
-  isDelivered: true;
+  isDelivezinc: true;
   createdAt: string;
 }
 
@@ -27,6 +27,8 @@ interface MessageEmmittedFromServer {
 }
 
 export default function Chat() {
+  //chat request feature
+
   const { user, setUser } = useUserStore();
   const { receiverId } = useParams<{ receiverId: string }>();
   const [messages, setMessages] = useState<ClientMessage[]>([]);
@@ -34,11 +36,10 @@ export default function Chat() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    //get old messages
     const getMessages = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/messages/${receiverId}`,
+          `${process.env.NEXT_PUBLIC_API_ENDPOINT}/messages/${receiverId}`,
           { credentials: "include" }
         );
         const messagesFromServer: MessageInterface[] = await response.json();
@@ -72,7 +73,7 @@ export default function Chat() {
   }, [user]);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:5000", {
+    socketRef.current = io(process.env.NEXT_PUBLIC_API_ENDPOINT!, {
       withCredentials: true,
     });
 
@@ -147,48 +148,53 @@ export default function Chat() {
   //   }
   // };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
   };
 
   return (
-    <div className="bg-red-300 w-screen h-screen">
+    <>
+      <div className=" fixed top-12 text-3xl w-screen flex items-center justify-center font-semibold text-zinc-50 bg-zinc-900 backdrop-blur-md p-1.5  bg-opacity-40">
+        {receiverId}
+      </div>
+      <div className="bg-zinc-800 w-full pt-24 pb-16 mb-10">
+        <div className="flex flex-col justify-center items-end">
+          {messages.map((msg, idx) =>
+            msg.sentBy !== "user" ? (
+              <MessageFromUser
+                userName={receiverId}
+                date={msg.date}
+                message={`${msg.content}`}
+                key={idx}
+              />
+            ) : (
+              <MessageFromOther
+                userName={user!.userName}
+                date={msg.date}
+                message={`${msg.content}`}
+                key={idx}
+              />
+            )
+          )}
+        </div>
+      </div>
       <form
-        className="flex flex-col items-center justify-center"
+        className=" fixed bottom-0 left-0 flex flex-row gap-2 items-center justify-center bg-zinc-900 w-full flex-wrap"
         onSubmit={handleSubmit}
       >
-        <input
+        <textarea
           value={value}
           onChange={handleChange}
-          type="text"
           placeholder="message"
-          className="my-4 w-10/12 h-10 text-slate-50 bg-red-300 focus:outline-red-400 px-3 rounded-md border-2 border-red-200 placeholder:text-red-200"
+          className="my-4 w-2/3 min-h-10 text-zinc-50 bg-zinc-800 focus:outline-zinc-400 p-1.5 rounded-md border-2 border-zinc-200 placeholder:text-zinc-200"
         />
         <button
           type="submit"
-          className="bg-red-300 h-10 w-20 text-slate-50 hover:scale-110 transition-all duration-100 hover:bg-red-400 rounded-md border-2 border-red-200"
+          className="bg-zinc-800 h-10 w-20 text-zinc-50 hover:scale-105 transition-all duration-100 hover:bg-zinc-700 rounded-md border-2 border-zinc-200"
         >
           Send
         </button>
       </form>
-      <div className="my-10 flex flex-col justify-center items-end">
-        <div className="text-3xl w-screen flex items-center justify-center font-semibold text-slate-50">
-          Messages
-        </div>
-        {messages.map((msg, idx) =>
-          msg.sentBy !== "user" ? (
-            <Message
-              message={`Sent By:${receiverId}: ${msg.content} // ${msg.date}`}
-              key={idx}
-            />
-          ) : (
-            <Message
-              message={`Sent By:${user?.userName}: ${msg.content} // ${msg.date}`}
-              key={idx}
-            />
-          )
-        )}
-      </div>
-    </div>
+    </>
   );
 }

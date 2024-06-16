@@ -25,9 +25,12 @@ const Navbar = () => {
   useEffect(() => {
     const getAuthStatus = async () => {
       try {
-        const response = await fetch("http://localhost:5000/auth/status", {
-          credentials: "include",
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/status`,
+          {
+            credentials: "include",
+          }
+        );
         if (!response.ok) {
           console.log(await response.text());
           throw new Error("Error Occured While Getting User Auth Status");
@@ -44,23 +47,28 @@ const Navbar = () => {
   }, []);
 
   return (
-    <div className="w-full h-12 bg-slate-900 text-slate-300 flex flex-row items-center justify-between px-3">
-      <h1 className="text-slate-300 hover:text-slate-50 text-xl font-bold">
-        socket
+    <div className="fixed top-0 left-0 w-full h-12 bg-zinc-950 text-zinc-300 flex flex-row items-center justify-between px-2 border-b-2">
+      <h1 className="text-zinc-300 hover:text-zinc-50 text-xl font-bold">
+        🔥socket
       </h1>
-      <div className="px-2 flex flex-row items-center justify-evenly gap-4 sm:gap-3">
-        <div>Chat</div>
+      <div className="px-1 flex flex-row items-center justify-evenly gap-4 sm:gap-3">
+        <Link className="font-bold" href={"/"}>
+          Home
+        </Link>
+        <Link className="font-bold" href={"/chats"}>
+          Chat
+        </Link>
         {!user ? (
           <Link
             href={"/login"}
-            className="py-1 px-2 bg-slate-400 rounded-md text-slate-950 hover:bg-slate-50"
+            className="py-1 px-2 bg-zinc-300 rounded-md text-zinc-950 hover:bg-zinc-50 font-bold"
           >
             Login
           </Link>
         ) : (
           <Link
             href={"/profile"}
-            className="py-1 px-2 bord bg-slate-400 rounded-md text-slate-950 transition-all duration-100 text- hover:bg-slate-50 font-medium"
+            className="py-1 px-2 bord bg-zinc-300 rounded-md text-zinc-950 transition-all duration-100 text- hover:bg-zinc-50 font-medium"
           >
             {user.userName}
           </Link>
