@@ -57,7 +57,6 @@ const Page = () => {
   const handleRequestSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      console.log("0", value);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_ENDPOINT}/request/${value}?action=send-request`,
         { method: "POST", credentials: "include" }
@@ -69,6 +68,7 @@ const Page = () => {
     } catch (error) {
       console.error(error);
     } finally {
+      setValue("");
       setTrigger(!trigger);
     }
   };
@@ -88,11 +88,12 @@ const Page = () => {
             className="text-zinc-50 py-1 px-2 rounded-sm min-w-56 bg-zinc-900 text-m placeholder:text-sm rounded-s-sm"
             type="text"
             placeholder="Username"
+            value={value}
             onChange={(e) => handleChange(e)}
           />
           <button
             type="submit"
-            className="bg-zinc-400 py-1 px-2 text-zinc-900 rounded-e-sm font-medium"
+            className="bg-zinc-400 py-1 px-2 text-zinc-900 rounded-e-sm font-medium hover:bg-emerald-400"
           >
             Send
           </button>
@@ -139,13 +140,13 @@ const Page = () => {
                 <div>{`${f.user1}`}</div>
                 <div className="flex flex-row gap-1">
                   <div
-                    className="transition-all duration-100 bg-zinc-700 px-3 py-0.5 rounded-sm cursor-pointer font-semibold hover:bg-zinc-800"
+                    className="transition-all duration-100 bg-zinc-700 px-3 py-0.5 rounded-sm cursor-pointer font-semibold hover:bg-emerald-400"
                     onClick={() => handleAccept(f.user1 as string)}
                   >
                     +
                   </div>
                   <div
-                    className="transition-all duration-100 bg-zinc-700 px-3 py-0.5 rounded-sm cursor-pointer font-semibold hover:bg-zinc-800"
+                    className="transition-all duration-100 bg-zinc-700 px-3 py-0.5 rounded-sm cursor-pointer font-semibold hover:bg-red-400"
                     onClick={() => handleReject(f.user1 as string)}
                   >
                     -

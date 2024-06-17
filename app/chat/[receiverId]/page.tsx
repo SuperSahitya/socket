@@ -33,11 +33,12 @@ export default function Chat() {
   const { receiverId } = useParams<{ receiverId: string }>();
   const [messages, setMessages] = useState<ClientMessage[]>([]);
   const [value, setValue] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+    lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
@@ -124,18 +125,31 @@ export default function Chat() {
           receiverId: receiverId,
           content: value,
         };
-        socketRef.current.emit("private-message", data, (response: string) => {
-          console.log("response : ", response);
-          setValue("");
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            {
-              sentBy: "user",
-              content: data.content,
-              date: new Date().toISOString(),
-            },
-          ]);
-        });
+        socketRef.current.emit(
+          "private-message",
+          data,
+          (error: string, response: string) => {
+            if (error) {
+              setError(error);
+              console.error("Error sending message:", error);
+              setTimeout(() => {
+                setError(null);
+              }, 300);
+              return;
+            }
+            console.log("response : ", response);
+
+            setValue("");
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                sentBy: "user",
+                content: data.content,
+                date: new Date().toISOString(),
+              },
+            ]);
+          }
+        );
       }
     } else {
       console.log("Socket is not connected");
@@ -159,10 +173,10 @@ export default function Chat() {
 
   return (
     <>
-      <div className=" fixed top-12 text-3xl w-screen flex items-center justify-center font-semibold text-zinc-50 bg-zinc-900 backdrop-blur-md p-1.5  bg-opacity-40">
+      <div className="fixed top-12 text-2xl w-screen flex items-center justify-center font-semibold text-zinc-50 bg-zinc-900 backdrop-blur-md p-1.5  bg-opacity-40">
         {receiverId}
       </div>
-      <div className="bg-zinc-800 w-full pt-24 pb-16 mb-10">
+      <div className="min-h-screen bg-zinc-800 w-full pt-24 pb-16 mb-10">
         <div className="flex flex-col justify-center items-end">
           {messages.map((msg, idx) =>
             msg.sentBy !== "user" ? (
@@ -193,11 +207,13 @@ export default function Chat() {
           value={value}
           onChange={handleChange}
           placeholder="message"
-          className="my-4 w-2/3 min-h-10 text-zinc-50 bg-zinc-800 focus:outline-zinc-400 p-1.5 rounded-md border-2 border-zinc-200 placeholder:text-zinc-200"
+          className="my-4 w-2/3 min-h-10 h-10 text-zinc-50 bg-zinc-800 focus:outline-zinc-400 p-1.5 rounded-md border-2 border-zinc-200 placeholder:text-zinc-200"
         />
         <button
           type="submit"
-          className="bg-zinc-800 h-10 w-20 text-zinc-50 hover:scale-105 transition-all duration-100 hover:bg-zinc-700 rounded-md border-2 border-zinc-200"
+          className={`h-10 w-20 text-zinc-50 transition-all duration-100  rounded-md border-2 border-zinc-200 bg-zinc-800 ${
+            !error ? "hover:bg-emerald-400" : "hover:bg-red-400"
+          }`}
         >
           Send
         </button>
