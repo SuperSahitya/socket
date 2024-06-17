@@ -100,7 +100,9 @@ const Page = () => {
       </div>
       <div className=" p-4 flex flex-col justify-center items-center bg-zinc-700 gap-3">
         <div className="text-xl font-semibold flex flex-col gap-1">
-          {friends.filter((f) => f.status === "accepted").length > 0 ? "Friends" : "Send Friend Requests"}
+          {friends.filter((f) => f.status === "accepted").length > 0
+            ? "Friends"
+            : "Send Friend Requests"}
         </div>
         {friends
           .filter((f) => f.status === "accepted")
@@ -120,8 +122,11 @@ const Page = () => {
       </div>
       <div className="p-4 flex flex-col justify-center items-center bg-zinc-700 gap-3">
         <div className="text-xl font-semibold flex flex-col gap-1">
-          {friends
-          .filter((f) => f.status == "pending" && f.user1 !== user?.userName).length > 0 ? "Requests" : "No Pending Requests"}
+          {friends.filter(
+            (f) => f.status == "pending" && f.user1 !== user?.userName
+          ).length > 0
+            ? "Requests"
+            : "No Pending Requests"}
         </div>
         {friends
           .filter((f) => f.status == "pending" && f.user1 !== user?.userName)

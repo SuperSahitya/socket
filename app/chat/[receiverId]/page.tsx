@@ -34,6 +34,11 @@ export default function Chat() {
   const [messages, setMessages] = useState<ClientMessage[]>([]);
   const [value, setValue] = useState<string>("");
   const socketRef = useRef<Socket | null>(null);
+  const lastMessageRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
     const getMessages = async () => {
@@ -166,6 +171,7 @@ export default function Chat() {
                 date={msg.date}
                 message={`${msg.content}`}
                 key={idx}
+                ref={idx === messages.length - 1 ? lastMessageRef : null}
               />
             ) : (
               <MessageFromOther
@@ -173,6 +179,7 @@ export default function Chat() {
                 date={msg.date}
                 message={`${msg.content}`}
                 key={idx}
+                ref={idx === messages.length - 1 ? lastMessageRef : null}
               />
             )
           )}
