@@ -2,6 +2,7 @@
 import { useUserStore } from "@/components/Navbar";
 import Link from "next/link";
 import React from "react";
+import Loading from "./loading";
 
 const Page = () => {
   const { user, setUser } = useUserStore();
@@ -14,7 +15,10 @@ const Page = () => {
             <div className="font-bold text-xl">On 🔥socket</div>
           </div>
           {user ? (
-            <div className="font-bold text-xl">{`Welcome ${user.userName}`}</div>
+            <>
+              <div className="font-bold text-xl">{`Welcome, ${user.userName}`}</div>
+              <Link className="py-1 px-2 text-xl font-bold  text-zinc-950 bg-zinc-200 rounded-sm" href={"/chats"}>Chats</Link>
+            </>
           ) : (
             <div className="flex flex-row gap-4 justify-center items-center">
               <Link

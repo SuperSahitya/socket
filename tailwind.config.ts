@@ -35,6 +35,9 @@ const config = {
       height: {
         custom: "calc(100vh - 3rem)",
       },
+      backgroundImage: {
+        loading: "url('/rocket.gif')",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
